@@ -72,8 +72,24 @@ RUN /root/apt-wget.sh php$PHPVER-intl && update-alternatives --set php /usr/bin/
 # LIK setup
 
 # ssh 
-RUN mkdir -p /root/.ssh
-COPY data/known_hosts /root/.ssh/
+RUN mkdir -p /var/www/.ssh
+COPY data/known_hosts /var/www/.ssh/
+
+RUN chown -R www-data:staff /var/www/.ssh/
+RUN chmod 700 /var/www/.ssh/
+RUN chmod 644 /var/www/.ssh/known_hosts
+
+COPY data/.bash_profile /var/www/
+RUN chown www-data:staff /var/www/.bash_profile
+
+# mail
+RUN yarn global add catchmail
+RUN yarn global add maildev
+COPY data/catchmail-wrapper /usr/local/bin/
+RUN mkdir -p /var/www/log
+RUN chown www-data:staff /var/www/log
+COPY data/99-sendmail.ini /etc/php/$PHPVER/cli/conf.d/
+COPY data/99-sendmail.ini /etc/php/$PHPVER/apache2/conf.d/
 
 # document root
 RUN ln -nfs /app/web /var/www/html

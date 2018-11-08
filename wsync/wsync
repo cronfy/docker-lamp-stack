@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+ME="`realpath "$0"`"
+
+WDIR="`dirname "$ME"`"
+
+COMMAND="$1"
+shift
+
+case "$COMMAND" in 
+	bxf) 
+		shift
+		$WDIR/scripts/rsync.sh "$@"
+		exit $?
+		;;
+	bxdb) 
+		shift
+		$WDIR/scripts/bx-db.sh "$@"
+		exit $?
+		;;
+	show-nets) 
+		shift
+		$WDIR/scripts/show-nets.sh "$@"
+		exit $?
+		;;
+	*) 	
+		echo "Unknown command" >&2
+		exit 1
+		;;
+esac
+

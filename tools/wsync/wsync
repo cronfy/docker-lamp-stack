@@ -7,24 +7,31 @@ WDIR="`dirname "$ME"`"
 COMMAND="$1"
 shift
 
+export SCRIPT_NAME="`basename $0` $COMMAND"
+
 case "$COMMAND" in 
 	bxf) 
-		shift
 		$WDIR/scripts/rsync.sh "$@"
 		exit $?
 		;;
 	bxdb) 
-		shift
 		$WDIR/scripts/bx-db.sh "$@"
 		exit $?
 		;;
 	show-nets) 
-		shift
 		$WDIR/scripts/show-nets.sh "$@"
 		exit $?
 		;;
-	*) 	
-		echo "Unknown command" >&2
+	*) 
+		{
+		echo "`basename $0`: автоматизация деплоя Битрикса"
+		if [ -n "$COMMAND" ] ; then
+		echo "Unknown command $COMMAND"
+		fi
+		echo ""
+		echo "Syntax: `basename $0` <command> [ --help | command arguments ] "
+		echo "Команды: bxf, bxdb, show-nets."
+		} >&2
 		exit 1
 		;;
 esac

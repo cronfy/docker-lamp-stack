@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+SCRIPT_NAME="${SCRIPT_NAME:-`basename $0`}"
+
 INITIAL=false
 LITE=false
 
@@ -22,8 +24,18 @@ done
 SERVER="$1"
 WWWROOT="$2"
 
-if [ -z "$1" ] || [ -z "$2" ] ; then
-	echo "Syntax: `basename $0` <remote_host> <remote_document_root> [local_dir] " >&2
+if [ -z "$1" ] || [ -z "$2" ] || [ "--help" = "$1" ] ; then
+	{
+	echo "Syntax: $SCRIPT_NAME [ --lite | --initial ] <remote_host> <remote_document_root> [local_dir] "
+	echo ""
+	echo "Загружает файлы с remote_host из remote_document_root в local_dir (или в текущую папку)"
+	echo ""
+        echo "    remote_document_root  - корень сайта на битриксе, например /home/bitrix/www" 
+	echo ""
+	echo "    --initial  - загрузить .settings.php, dbconn.php, .htaccess" 
+	echo "    --lite     - загрузить только структуру директорий, не загружать файлы" 
+	echo ""
+	} >&2
 	exit 1
 fi
 

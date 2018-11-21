@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+SCRIPT_NAME="${SCRIPT_NAME:-`basename $0`}"
+
+if [ "--help" = "$1" ] ; then
+        {
+        echo "Syntax: $SCRIPT_NAME"
+        echo ""
+        echo "Показывает список сетей docker."
+        echo ""
+        } >&2
+        exit 1
+fi
+
 # sort: https://unix.stackexchange.com/a/52819/49860
 docker network ls --format '{{ .ID }}' | 
 	xargs docker network inspect --format '{{ .Name }} {{ range .IPAM.Config }}{{.Subnet}}{{end}}' | 

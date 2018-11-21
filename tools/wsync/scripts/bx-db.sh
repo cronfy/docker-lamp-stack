@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 
+SCRIPT_NAME="${SCRIPT_NAME:-`basename $0`}"
+
 SERVER="$1"
 WWWROOT="$2"
 
-if [ -z "$1" ] || [ -z "$2" ] ; then
-        echo "Syntax: `basename $0` <remote_host> <remote_document_root>" >&2
+if [ -z "$1" ] || [ -z "$2" ] || [ "--help" = "$1" ] ; then
+        {
+        echo "Syntax: $SCRIPT_NAME <remote_host> <remote_document_root>"
+        echo ""
+        echo "Дампит базу bitrix с remote_host и выводит дамп в stdout. Настройки подключения определяет сам по remote_document_root"
+        echo ""
+        echo "    remote_document_root  - корень сайта на битриксе, например /home/bitrix/www" 
+        echo ""
+        } >&2
+
         exit 1
 fi
 

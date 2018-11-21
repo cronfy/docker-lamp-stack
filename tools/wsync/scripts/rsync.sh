@@ -4,8 +4,11 @@ SCRIPT_NAME="${SCRIPT_NAME:-`basename $0`}"
 
 INITIAL=false
 LITE=false
+IBLOCKS=false
+HELP=false
 
-while true ; do
+POS=0
+while [ $# -gt 0 ]; do
 	case "$1" in
 		--lite)
 			LITE=true
@@ -15,16 +18,38 @@ while true ; do
 			INITIAL=true
 			shift
 			;;
+		--iblocks)
+			IBLOCKS=true
+			shift
+			;;
+		--help)
+			HELP=true
+			shift
+			;;
 		*)
-			break
+			POS=$((POS + 1))
+			case $POS in
+				1)
+					SERVER="$1"
+					;;
+				2)
+					WWWROOT="$1"
+					;;
+				3)
+					TARGET_DIR="$1"
+					;;
+			esac
+			shift
 			;;
 	esac
 done
 
-SERVER="$1"
-WWWROOT="$2"
 
-if [ -z "$1" ] || [ -z "$2" ] || [ "--help" = "$1" ] ; then
+if [ -z "$WWWROOT" ] || [ -z "$SERVER" ] ; then
+	HELP=true
+fi
+
+if [ "$HELP" = "true" ] ; then
 	{
 	echo "Syntax: $SCRIPT_NAME [ --lite | --initial ] <remote_host> <remote_document_root> [local_dir] "
 	echo ""
@@ -39,11 +64,16 @@ if [ -z "$1" ] || [ -z "$2" ] || [ "--help" = "$1" ] ; then
 	exit 1
 fi
 
+if [ "$IBLOCKS" = 'true' ] ; then
+	ssh $SERVER "cd $WWWROOT; find ./ -maxdepth 1 -mindepth 1 -name '*.xml' -or -name '*_files' | sed 's=^..=- /=' | sort"
+	exit
+fi
+
 # add trailing slash
 WWWROOT=$WWWROOT/
 
-if [ -n "$3" ] ; then
-	TARGET_DIR="$3/"
+if [ -n "$TARGET_DIR" ] ; then
+	TARGET_DIR="$TARGET_DIR/"
 else 
 	# add trailing slash
 	TARGET_DIR=./`basename $WWWROOT`/
@@ -111,6 +141,7 @@ else
 	    --exclude=bitrix/managed_cache --exclude=bitrix/html_pages --exclude=bitrix/backup --exclude=bitrix/cache \
 	    --exclude=bitrix/catalog_export --exclude=upload --exclude=bitrix/tmp \
 	    --exclude='*.log' --exclude='*.zip' --exclude='*.bak'  --exclude='*.tar.gz' --exclude='1_files/' --exclude='2_files/' \
+		--filter='"merge ./filter.rsync"' \
 	    $SERVER:$WWWROOT $TARGET_DIR
 fi
 

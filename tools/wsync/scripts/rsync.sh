@@ -13,12 +13,13 @@ DRY=false
 EXIT=false
 ECHO=false
 PROTECT_BITRIX_CORE=false
+FULL=false
 
 POS=0
 while [ $# -gt 0 ]; do
 	case "$1" in
-		--lite)
-			LITE=true
+		--full)
+			FULL=true
 			shift
 			;;
 		--initial)
@@ -82,8 +83,8 @@ if [ "$HELP" = "true" ] ; then
 	echo ""
         echo "    remote_document_root  - корень сайта на битриксе, например /home/bitrix/www" 
 	echo ""
-	echo "    --initial  - загрузить .settings.php, dbconn.php, .htaccess" 
-	echo "    --lite     - загрузить только структуру директорий, не загружать файлы" 
+	echo "    --initial  - загрузить .settings.php, dbconn.php, .htaccess (помимо прочих файлов)" 
+	echo "    --full     - загрузить все картинки, upload и прочее, т. е. сделать полную копию сайта" 
 	echo ""
 	} >&2
 	exit 1
@@ -190,16 +191,27 @@ else
 		PROTECT_BITRIX_CORE_ARG="--filter='merge $WRKDIR/filter.protect-bitrix-core.rsync'"
 	fi
 
+	EXCLUDE_UNNEEDED_ARGS="--exclude=bitrix/managed_cache --exclude=bitrix/cache"
+	EXCLUDE_UNNEEDED_ARGS="$EXCLUDE_UNNEEDED_ARGS --exclude=bitrix/html_pages --exclude=bitrix/backup"
+	EXCLUDE_UNNEEDED_ARGS="$EXCLUDE_UNNEEDED_ARGS --exclude=bitrix/tmp"
+	EXCLUDE_UNNEEDED_ARGS="$EXCLUDE_UNNEEDED_ARGS --exclude='*.log' --exclude='*.zip' --exclude='*.bak'  --exclude='*.tar.gz'"
+
+	EXCLUDE_HEAVY_ARGS="--exclude=upload"
+	if [ 'true' = "$FULL" ] ; then
+		EXCLUDE_HEAVY_ARGS=
+	fi
+
 	# eval: https://stackoverflow.com/a/21163341/1775065
 	eval $ECHO_CMD rsync -avz \
-            $EXCLUDE_CONF $DELETE \
-	    --exclude=bitrix/managed_cache --exclude=bitrix/html_pages --exclude=bitrix/backup --exclude=bitrix/cache \
-	    --exclude=bitrix/catalog_export --exclude=upload --exclude=bitrix/tmp \
-	    --exclude='*.log' --exclude='*.zip' --exclude='*.bak'  --exclude='*.tar.gz' --exclude='1_files/' --exclude='2_files/' \
+		$EXCLUDE_CONF $DELETE \
+		$EXCLUDE_UNNEEDED_ARGS \
+		$EXCLUDE_HEAVY_ARGS \
+		\
 		$FILTER_ARGS \
 		$PROTECT_BITRIX_CORE_ARG \
 		$DRY_ARGS \
-	    $SERVER:$WWWROOT $TARGET_DIR
+		\
+		$SERVER:$WWWROOT $TARGET_DIR
 fi
 
 

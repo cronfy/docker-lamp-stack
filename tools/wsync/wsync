@@ -22,6 +22,10 @@ case "$COMMAND" in
 		$WDIR/scripts/show-nets.sh "$@"
 		exit $?
 		;;
+	show-untracked) 
+		$WDIR/scripts/show-untracked.sh "$@"
+		exit $?
+		;;
 	*) 
 		{
 		echo "`basename $0`: автоматизация деплоя Битрикса"

@@ -2,10 +2,17 @@
 
 SCRIPT_NAME="${SCRIPT_NAME:-`basename $0`}"
 
+WRKDIR="`dirname "$0"`"
+WRKDIR="`realpath "$WRKDIR"`"
+
 INITIAL=false
 LITE=false
 IBLOCKS=false
 HELP=false
+DRY=false
+EXIT=false
+ECHO=false
+PROTECT_BITRIX_CORE=false
 
 POS=0
 while [ $# -gt 0 ]; do
@@ -25,6 +32,24 @@ while [ $# -gt 0 ]; do
 		--help)
 			HELP=true
 			shift
+			;;
+		--dry-run|--dry)
+			DRY=true
+			shift
+			;;
+		--echo)
+			ECHO=true
+			shift
+			;;
+		--protect-bitrix-core)
+			PROTECT_BITRIX_CORE=true
+			shift
+			;;
+		--*)
+			echo "Unknown argument: $1" >&2
+			shift
+			HELP=true
+			EXIT=true
 			;;
 		*)
 			POS=$((POS + 1))
@@ -64,6 +89,10 @@ if [ "$HELP" = "true" ] ; then
 	exit 1
 fi
 
+if [ "$EXIT" = "true" ] ; then
+	exit 1
+fi
+
 if [ "$IBLOCKS" = 'true' ] ; then
 	ssh $SERVER "cd $WWWROOT; find ./ -maxdepth 1 -mindepth 1 -name '*.xml' -or -name '*_files' | sed 's=^..=- /=' | sort"
 	exit
@@ -89,7 +118,8 @@ if [ 'true' = "$INITIAL" ] ; then
 fi
 
 if [ "$LITE" = "true" ] ; then
-	echo -e "\n\n\nINITIAL MODE\n\n\n"
+	echo "DEPRECATED"
+	exit 1
 	sleep 1
 	#
 	# INITIAL FAST EXPLORE
@@ -119,7 +149,12 @@ else
 	echo " *** LITE: $LITE"
 	echo " *** DEST: $TARGET_DIR"
 	echo -e "\n\n\n"
-	sleep 2
+
+	if [ "true" == "$DRY" ] || [ "true" == "$ECHO" ] ; then
+		: nothing
+	else
+		sleep 2
+	fi
 	#
 	# FULL
 	#
@@ -135,13 +170,35 @@ else
 		DELETE=
 	fi
 
+	FILTER_ARGS=
+	if [ -e './filter.rsync' ] ; then
+		FILTER_ARGS="--filter='\"merge ./filter.rsync\"'"
+	fi
+
+	DRY_ARGS=
+	if [ 'true' = "$DRY" ] ; then
+		DRY_ARGS='--dry-run'
+	fi
+
+	ECHO_CMD=
+	if [ 'true' = "$ECHO" ] ; then
+		ECHO_CMD=echo
+	fi
+
+	PROTECT_BITRIX_CORE_ARG=
+	if [ "$PROTECT_BITRIX_CORE" = "true" ] ; then
+		PROTECT_BITRIX_CORE_ARG="--filter='merge $WRKDIR/filter.protect-bitrix-core.rsync'"
+	fi
+
 	# eval: https://stackoverflow.com/a/21163341/1775065
-	eval rsync -av \
+	eval $ECHO_CMD rsync -avz \
             $EXCLUDE_CONF $DELETE \
 	    --exclude=bitrix/managed_cache --exclude=bitrix/html_pages --exclude=bitrix/backup --exclude=bitrix/cache \
 	    --exclude=bitrix/catalog_export --exclude=upload --exclude=bitrix/tmp \
 	    --exclude='*.log' --exclude='*.zip' --exclude='*.bak'  --exclude='*.tar.gz' --exclude='1_files/' --exclude='2_files/' \
-		--filter='"merge ./filter.rsync"' \
+		$FILTER_ARGS \
+		$PROTECT_BITRIX_CORE_ARG \
+		$DRY_ARGS \
 	    $SERVER:$WWWROOT $TARGET_DIR
 fi
 

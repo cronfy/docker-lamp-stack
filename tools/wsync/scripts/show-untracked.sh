@@ -27,10 +27,10 @@ if [ ! -d '.git' ] ; then
 fi
 
 if [ 'true' = "$LARGE" ] ; then
-	FILTER="grep '[MG]'"
+	FILTER="[MG]"
 else
-	FILTER=tee
+	FILTER="^"
 fi
 
-git status --porcelain | awk ' $1 == "??" { print $2 }' | xargs du -hs | $FILTER
+git status --porcelain | awk ' $1 == "??" { print $2 }' | xargs du -hs | grep "$FILTER"
 

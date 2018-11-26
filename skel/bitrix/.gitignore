@@ -6,39 +6,36 @@
 
 # do not ignore WWW
 !/www
-# but ignore all inside it
-/www/*
+!/www/*
+!/www/**
 
-# except bitrix - do not ignore it
-!/www/bitrix/
-# but ignore all inside it
+# ignore bitrix with some exceptions
 /www/bitrix/*
-
 # except php_interface (there is init.php)
 !/www/bitrix/php_interface
 !/www/bitrix/php_interface/*
 !/www/bitrix/php_interface/**
 /www/bitrix/php_interface/dbconn.php
 
-#
-# and so on: ignore, but except, ignore, but except...
-#
-
 # templates
 !/www/bitrix/templates/
 !/www/bitrix/templates/*
 !/www/bitrix/templates/**
 
-# local
-!/www/local/
-!/www/local/*
-!/www/local/**
+# env dependent
+/www/.htaccess
 
+# large
+/www/upload
+
+#
+# file masks
+#
 
 # ignore these files always
 
 *.log
 *.tar.gz
 *.tar
-
+.DS_Store
 

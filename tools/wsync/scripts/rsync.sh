@@ -173,7 +173,7 @@ else
 
 	FILTER_ARGS=
 	if [ -e './filter.rsync' ] ; then
-		FILTER_ARGS="--filter='\"merge ./filter.rsync\"'"
+		FILTER_ARGS="--filter='merge ./filter.rsync'"
 	fi
 
 	DRY_ARGS=

@@ -25,6 +25,9 @@
 # env dependent
 /www/.htaccess
 
+# dev tests
+/www/dev-*
+
 # large
 /www/upload
 

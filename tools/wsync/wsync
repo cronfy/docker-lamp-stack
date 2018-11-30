@@ -34,7 +34,7 @@ case "$COMMAND" in
 		fi
 		echo ""
 		echo "Syntax: `basename $0` <command> [ --help | command arguments ] "
-		echo "Команды: bxf, bxdb, show-nets."
+		echo "Команды: bxf, bxdb, show-nets, show-untracked."
 		} >&2
 		exit 1
 		;;

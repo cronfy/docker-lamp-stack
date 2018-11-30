@@ -3,6 +3,6 @@
         RewriteRule ^ /dev-empty.png?=%{REQUEST_FILENAME} [NC,L]
 
         RewriteCond %{REQUEST_URI} /upload/.*.(jpeg|png|jpg|gif)
-        RewriteCond %{REQUEST
+        RewriteCond %{REQUEST_FILENAME} !-f
         RewriteRule ^ /dev-empty.png?=%{REQUEST_FILENAME} [NC,L]
 

@@ -18,12 +18,16 @@ case "$COMMAND" in
 		$WDIR/scripts/bx-db.sh "$@"
 		exit $?
 		;;
-	show-nets) 
+	show-nets|nets) 
 		$WDIR/scripts/show-nets.sh "$@"
 		exit $?
 		;;
 	show-untracked) 
 		$WDIR/scripts/show-untracked.sh "$@"
+		exit $?
+		;;
+	link) 
+		$WDIR/scripts/link.sh "$@"
 		exit $?
 		;;
 	*) 
@@ -34,7 +38,7 @@ case "$COMMAND" in
 		fi
 		echo ""
 		echo "Syntax: `basename $0` <command> [ --help | command arguments ] "
-		echo "Команды: bxf, bxdb, show-nets, show-untracked."
+		echo "Команды: bxf, bxdb, show-nets, show-untracked, link."
 		} >&2
 		exit 1
 		;;

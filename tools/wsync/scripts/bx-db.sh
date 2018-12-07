@@ -43,6 +43,7 @@ if [ -z "$mysqlCredentials" ] ; then
 	exit 1
 fi
 
+echo mysqldump $mysqlCredentials >&2
 #ssh $SERVER mysql -e "\"show databases\"" $mysqlCredentials 
 ssh $SERVER mysqldump $mysqlCredentials \| gzip
 

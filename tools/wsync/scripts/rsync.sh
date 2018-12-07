@@ -86,6 +86,11 @@ if [ "$HELP" = "true" ] ; then
 	echo "    --initial  - загрузить .settings.php, dbconn.php, .htaccess (помимо прочих файлов)" 
 	echo "    --full     - загрузить все картинки, upload и прочее, т. е. сделать полную копию сайта" 
 	echo ""
+	echo "Если в текущей директории есть файл filter.rsync, он подключается через --filter. Пути к файлам"
+	echo "нужно указывать относительно remote_document_root. Например, если remote_document_root это"
+	echo "/home/bitrix/www, и нужно исключить /home/bitrix/www/sitemap.xml, то указывать надо как"
+	echo "- /sitemap.xml"
+	echo ""
 	} >&2
 	exit 1
 fi
@@ -111,107 +116,62 @@ fi
 
 # если это просто обновление существующего кода (по умолчанию),
 # то не обновляем конфиги
-EXCLUDE_CONF="--exclude='bitrix/.settings.php' --exclude='bitrix/php_interface/dbconn.php' --exclude='.htaccess'"
+EXCLUDE_LOCAL_SETTINGS_ARG="--filter='merge $WRKDIR/filter.bitrix-local-settings.rsync'"
+
+echo " *** INITIAL: $INITIAL"
+echo " *** DEST: $TARGET_DIR"
+echo -e "\n\n\n"
+
+if [ "true" == "$DRY" ] || [ "true" == "$ECHO" ] ; then
+	: nothing
+else
+	sleep 2
+fi
 
 if [ 'true' = "$INITIAL" ] ; then
 	# если это первый rsync, то загружаем конфиги
-	EXCLUDE_CONF=""
+	EXCLUDE_LOCAL_SETTINGS_ARG=""
+	# при первой загрузке удаляем все лишнее
+	DELETE="--delete-excluded --delete"
+else
+	# при обновлении файлов не удаляем ничего лишнего
+	DELETE=
 fi
 
-if [ "$LITE" = "true" ] ; then
-	echo "DEPRECATED"
-	exit 1
-	sleep 1
-	#
-	# INITIAL FAST EXPLORE
-	#
-
-	# первая часть exlude для ускорения на первом этапе, чтобы просто увидеть все, что скачается, и при необходимости
-	# добавить правки во вторую часть
-
-	# вторая часть exclude - исключение лишнего
-
-	# eval: https://stackoverflow.com/a/21163341/1775065
-	eval rsync -av \
-            $EXCLUDE_CONF \
-	    --exclude='y-market' --exclude='*.jar' --exclude='*.orig' --exclude='*.map' --exclude='*.html' \
-	    --exclude='*.svg' --exclude='*.csv' --exclude='*.woff' --exclude='*.eot' --exclude='*.ttf' --exclude='*.woff2' \
-	    --exclude='*.cab' --exclude='*.png' --exclude='*.xsd' --exclude='*.jpg' --exclude='*.xml' --exclude='*.gif' \
-	    --exclude='*.js' --exclude='*.php' --exclude='*.css' \
-	    --exclude='*.jpeg' --exclude='*.otf' --exclude='*.sql' --exclude '*.mp3' \
-	    \
-	    --exclude=bitrix/managed_cache --exclude=bitrix/html_pages --exclude=bitrix/backup --exclude=bitrix/cache \
-	    --exclude=bitrix/catalog_export --exclude=upload --exclude=bitrix/tmp \
-	    --exclude='*.log' --exclude='*.zip' --exclude='*.bak'  --exclude='*.tar.gz' --exclude='1_files/' --exclude='2_files/' \
-	    $SERVER:$WWWROOT $TARGET_DIR
-else 
-	echo -e "\n\n\n *** FULL MODE"
-	echo " *** INITIAL: $INITIAL"
-	echo " *** LITE: $LITE"
-	echo " *** DEST: $TARGET_DIR"
-	echo -e "\n\n\n"
-
-	if [ "true" == "$DRY" ] || [ "true" == "$ECHO" ] ; then
-		: nothing
-	else
-		sleep 2
-	fi
-	#
-	# FULL
-	#
-
-	# для финальной загрузки оставляем только вторую часть exclude и добавляем delete для удаления лишнего, которое
-	# все-таки успело скачаться
-
-	if [ 'true' = "$INITIAL" ] ; then
-		# при первой загрузке удаляем все лишнее
-		DELETE="--delete-excluded --delete"
-	else
-		# при обновлении файлов не удаляем ничего лишнего
-		DELETE=
-	fi
-
-	FILTER_ARGS=
-	if [ -e './filter.rsync' ] ; then
-		FILTER_ARGS="--filter='merge ./filter.rsync'"
-	fi
-
-	DRY_ARGS=
-	if [ 'true' = "$DRY" ] ; then
-		DRY_ARGS='--dry-run'
-	fi
-
-	ECHO_CMD=
-	if [ 'true' = "$ECHO" ] ; then
-		ECHO_CMD=echo
-	fi
-
-	PROTECT_BITRIX_CORE_ARG=
-	if [ "$PROTECT_BITRIX_CORE" = "true" ] ; then
-		PROTECT_BITRIX_CORE_ARG="--filter='merge $WRKDIR/filter.protect-bitrix-core.rsync'"
-	fi
-
-	EXCLUDE_UNNEEDED_ARGS="--exclude=bitrix/managed_cache --exclude=bitrix/cache"
-	EXCLUDE_UNNEEDED_ARGS="$EXCLUDE_UNNEEDED_ARGS --exclude=bitrix/html_pages --exclude=bitrix/backup"
-	EXCLUDE_UNNEEDED_ARGS="$EXCLUDE_UNNEEDED_ARGS --exclude=bitrix/tmp"
-	EXCLUDE_UNNEEDED_ARGS="$EXCLUDE_UNNEEDED_ARGS --exclude='*.log' --exclude='*.zip' --exclude='*.bak'  --exclude='*.tar.gz'"
-
-	EXCLUDE_HEAVY_ARGS="--exclude=upload"
-	if [ 'true' = "$FULL" ] ; then
-		EXCLUDE_HEAVY_ARGS=
-	fi
-
-	# eval: https://stackoverflow.com/a/21163341/1775065
-	eval $ECHO_CMD rsync -avz \
-		$EXCLUDE_CONF $DELETE \
-		$EXCLUDE_UNNEEDED_ARGS \
-		$EXCLUDE_HEAVY_ARGS \
-		\
-		$FILTER_ARGS \
-		$PROTECT_BITRIX_CORE_ARG \
-		$DRY_ARGS \
-		\
-		$SERVER:$WWWROOT $TARGET_DIR
+THIS_PROJECT_LOCAL_FILTER_ARGS=
+if [ -e './filter.rsync' ] ; then
+	THIS_PROJECT_LOCAL_FILTER_ARGS="--filter='merge ./filter.rsync'"
 fi
 
+DRY_ARGS=
+if [ 'true' = "$DRY" ] ; then
+	DRY_ARGS='--dry-run'
+fi
+
+ECHO_CMD=
+if [ 'true' = "$ECHO" ] ; then
+	ECHO_CMD=echo
+fi
+
+PROTECT_BITRIX_CORE_ARG=
+if [ "$PROTECT_BITRIX_CORE" = "true" ] ; then
+	PROTECT_BITRIX_CORE_ARG="--filter='merge $WRKDIR/filter.protect-bitrix-core.rsync'"
+fi
+
+EXCLUDE_BITRIX_TO_LOCAL_ARG="--filter='merge $WRKDIR/filter.bitrix-to-local.rsync'"
+
+# eval: https://stackoverflow.com/a/21163341/1775065
+eval $ECHO_CMD rsync -avz \
+	$DRY_ARGS \
+	\
+	$DELETE \
+	\
+	$PROTECT_BITRIX_CORE_ARG \
+	\
+	$EXCLUDE_LOCAL_SETTINGS_ARG \
+	$EXCLUDE_BITRIX_TO_LOCAL_ARG \
+	\
+	$THIS_PROJECT_LOCAL_FILTER_ARGS \
+	--out-format=\"%n %l\" \
+	$SERVER:$WWWROOT $TARGET_DIR
 

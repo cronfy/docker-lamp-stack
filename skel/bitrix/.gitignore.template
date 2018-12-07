@@ -9,26 +9,32 @@
 !/www/*
 !/www/**
 
-# ignore bitrix with some exceptions
+# exlude bitrix with some exceptions
 /www/bitrix/*
-# except php_interface (there is init.php)
+# include php_interface (there is init.php)
 !/www/bitrix/php_interface
 !/www/bitrix/php_interface/*
 !/www/bitrix/php_interface/**
 /www/bitrix/php_interface/dbconn.php
 
-# templates
+# include templates
 !/www/bitrix/templates/
 !/www/bitrix/templates/*
 !/www/bitrix/templates/**
 
-# env dependent
+# exclude env dependent
 /www/.htaccess
+
 
 # dev tests
 /www/dev-*
 
-# large
+# exlude var
+/www/sitemap_iblock*
+/www/sitemap_files*
+/www/sitemap.xml
+
+# large 
 /www/upload
 
 #

@@ -15,6 +15,14 @@ ECHO=false
 PROTECT_BITRIX_CORE=false
 FULL=false
 
+if [ -f '.wsync' ] ; then
+	. .wsync
+
+	SERVER="$STAGE_HOST"
+	WWWROOT="$STAGE_DOCUMENT_ROOT"
+fi
+
+
 POS=0
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -120,6 +128,9 @@ EXCLUDE_LOCAL_SETTINGS_ARG="--filter='merge $WRKDIR/filter.bitrix-local-settings
 
 echo " *** INITIAL: $INITIAL"
 echo " *** DEST: $TARGET_DIR"
+if [ "true" == "$DRY" ] ; then
+	echo " *** MODE: DRY"
+fi
 echo -e "\n\n\n"
 
 if [ "true" == "$DRY" ] || [ "true" == "$ECHO" ] ; then

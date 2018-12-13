@@ -34,6 +34,10 @@ case "$COMMAND" in
 		$WDIR/scripts/link.sh "$@"
 		exit $?
 		;;
+	help)
+		$WDIR/scripts/help.sh "$@"
+		exit $?
+		;;
 	*) 
 		{
 		echo "`basename $0`: автоматизация деплоя Битрикса"

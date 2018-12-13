@@ -2,10 +2,17 @@
 
 SCRIPT_NAME="${SCRIPT_NAME:-`basename $0`}"
 
-SERVER="$1"
-WWWROOT="$2"
+if [ -f '.wsync' ] ; then
+	. .wsync
 
-if [ -z "$1" ] || [ -z "$2" ] || [ "--help" = "$1" ] ; then
+	SERVER="$STAGE_HOST"
+	WWWROOT="$STAGE_DOCUMENT_ROOT"
+fi
+
+SERVER=${1:-$SERVER}
+WWWROOT=${2:-$WWWROOT}
+
+if [ -z "$SERVER" ] || [ -z "$WWWROOT" ] || [ "--help" = "$1" ] ; then
         {
         echo "Syntax: $SCRIPT_NAME <remote_host> <remote_document_root>"
         echo ""

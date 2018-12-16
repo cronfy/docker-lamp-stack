@@ -47,4 +47,7 @@
 *.tar.gz
 *.tar
 .DS_Store
+# vim
+*.swp
+*.swo
 

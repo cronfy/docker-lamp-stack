@@ -33,9 +33,19 @@
 /www/sitemap_iblock*
 /www/sitemap_files*
 /www/sitemap.xml
+/www/y-market/*.xml
 
 # large 
 /www/upload
+
+# common content manager's files
+/www/*.zip
+/www/*.rar
+/www/*.tar.gz
+# infoblock import, дублируем маску архивов, пусть это будет отдельно независимо описано
+/www/*_files
+/www/*_files.zip
+/www/*_files.tar.gz
 
 #
 # file masks
@@ -50,4 +60,9 @@
 # vim
 *.swp
 *.swo
+
+#
+# THIS PROJECT
+#
+# add your own exclusions...
 

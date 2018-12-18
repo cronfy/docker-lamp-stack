@@ -15,6 +15,18 @@
 - /sitemap.xml
 - /sitemap_iblock*.xml
 - /sitemap_files.xml
+# тут модуль генерирует файлы, в том числе *.php, но все это var
+- /bitrix/catalog_export
+- /y-market/*.xml
+# common content manager's files
+- /*.zip
+- /*.rar
+- /*.tar.gz
+# infoblock import, дублируем маску архивов, пусть это будет отдельно независимо описано
+- /*_files
+- /*_files.zip
+- /*_files.tar.gz
+
 
 # logs
 - *.log

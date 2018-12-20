@@ -26,7 +26,10 @@ if [ -z "$SERVER" ] || [ -z "$WWWROOT" ] || [ "--help" = "$1" ] ; then
 fi
 
 if [ -t 1 ] ; then
-	echo "You must redirect output to file, I will echo dump.sql.gz" >&2
+	echo "Нужно перенаправить вывод скрипта в какой-либо файл/поток, потому что он выводит дамп БД, сжатый gzip." >&2
+	echo "Например:" >&2
+	echo "" >&2
+	echo "    $SCRIPT_NAME > db.sql.gz" >&2
 	exit 1
 fi
 

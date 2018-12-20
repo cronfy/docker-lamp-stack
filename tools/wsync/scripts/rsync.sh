@@ -20,6 +20,7 @@ SYNC_LOCAL_SETTINGS=false
 DELETE_FILES=false
 FILTERS_LIST=""
 SLEEP=2
+NOT_REAL=false
 
 
 nextIsProfile=false
@@ -60,6 +61,7 @@ case "$PROFILE" in
 		UPLOAD=true
 		SYNC_LOCAL_SETTINGS=true
 		FILTERS_LIST="common-dev-test-var-files bitrix-tmp-cache-files"
+		DELETE_FILES=true
 		;;	
 	*)
 		echo "Unknown profile $PROFILE" >&2
@@ -224,10 +226,12 @@ fi
 DRY_ARG=
 if [ 'true' = "$DRY" ] ; then
 	DRY_ARG='--dry-run'
+	NOT_REAL=true
 fi
 
 ECHO_CMD=
 if [ 'true' = "$ECHO" ] ; then
+	NOT_REAL=true
 	ECHO_CMD=echo
 fi
 
@@ -252,9 +256,24 @@ fi
 
 if [ "$UPLOAD" == "true" ] ; then
 	if [ "$DELETE_FILES" == "true" ] ; then
-		echo "DELETING ON UPLOAD!!"
-		echo "Not implemented, exiting."
-		exit 1
+		if [ "true" != "$NOT_REAL" ] && [ "true" != "$FORCE_DELETE_FILES_ON_REMOTE" ] ; then
+			{
+			echo " *** Вы пытаетесь УДАЛИТЬ файлы на СЕРВЕРЕ."
+			echo " *** Будут удалены файлы, отсутствующие в локальной копии или исключенные из" 
+			echo " *** загрузки (например, это может быть содержимое upload)."
+			echo 
+			echo "Если это действительно то, что нужно сделать, нужно указать ключ"
+			echo 
+			echo "     --force-delete-files-on-remote"
+			echo 
+			echo "Можно также указать "
+			echo
+			echo "     --dry"
+			echo "чтобы посмотреть, что произойдет при синхронизации, но не проводить"
+			ehco "синхронизацию по-настоящему."
+			} >&2
+			exit 1
+		fi
 	fi
 fi
 
@@ -269,11 +288,16 @@ fi
 
 echo -e "\n\n\n"
 
-if [ "true" == "$DRY" ] || [ "true" == "$ECHO" ] ; then
+if [ "true" == "$NOT_REAL" ] ; then
 	: nothing
 else
 	sleep $SLEEP || { echo "Sleep error" ; exit 1; }
 fi
+
+# rsync использует алгоритм delta-transfer для передачи файлов. Это означает, что если файл изменился
+# частично, или вообще не менялся, то rsync синхронизирует его, не передавая его содержимое целиком,
+# а только изменения. Поэтому имеет смысл перед началом rsync скопировать на сайт заготовленное ядро
+# bitrix, чтобы не нужно было передавать сотни мегабайт исходников Битрикса по сети.
 
 # eval: https://stackoverflow.com/a/21163341/1775065
 eval $ECHO_CMD rsync -avz \

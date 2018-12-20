@@ -47,6 +47,9 @@
 /www/*_files.zip
 /www/*_files.tar.gz
 
+# common hosting var/tmp files
+/www/.well-known
+
 #
 # file masks
 #

@@ -7,6 +7,7 @@
 - /dev-*.php
 - .idea
 - *.bak
+- *.BAK
 
 # var
 - /sitemap.xml

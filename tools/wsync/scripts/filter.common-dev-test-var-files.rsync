@@ -29,6 +29,8 @@
 - /*_files
 - /*_files.zip
 - /*_files.tar.gz
+# битрикс делает бэкапы?
+/www/.htaccess_back*
 # common hosting var/tmp files
 - /.well-known
 

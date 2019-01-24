@@ -41,11 +41,12 @@ mysqlCredentials="`ssh $SERVER cat $WWWROOT/bitrix/.settings.php | awk '
 	$1 == quote "options" quote { exit; }
 
 	{ gsub(/,$/, "", $3) }
+	$1 == quote "host" quote { host = $3 }
 	$1 == quote "login" quote { username = $3 }
 	$1 == quote "database" quote { dbname = $3 }
 	$1 == quote "password" quote { password = $3 }
 
-	END { if (password && username && dbname) print "-u " username " -p" password, dbname }
+	END { if (password && username && dbname && host) print "-u " username " -p" password " -h " host, dbname }
 '`"
 
 if [ -z "$mysqlCredentials" ] ; then

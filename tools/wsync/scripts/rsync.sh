@@ -5,23 +5,27 @@ SCRIPT_NAME="${SCRIPT_NAME:-`basename $0`}"
 WRKDIR="`dirname "$0"`"
 WRKDIR="`realpath "$WRKDIR"`"
 
-INITIAL=false
-LITE=false
-IBLOCKS=false
-HELP=false
-DRY=false
-EXIT=false
-ECHO=false
-PROTECT_BITRIX_CORE=false
-FULL=false
-UPLOAD=false
-FORCE_DELETE_FILES_ON_REMOTE=false
-SYNC_LOCAL_SETTINGS=false
-DELETE_FILES=false
-FILTERS_LIST=""
-SLEEP=2
-NOT_REAL=false
+setDefaults() {
+	INITIAL=false
+	LITE=false
+	IBLOCKS=false
+	HELP=false
+	DRY=false
+	EXIT=false
+	ECHO=false
+	PROTECT_BITRIX_CORE=false
+	FULL=false
+	UPLOAD=false
+	FORCE_DELETE_FILES_ON_REMOTE=false
+	SYNC_LOCAL_SETTINGS=false
+	DELETE_FILES=false
+	DELETE_EXCLUDED_FILES=false
+	FILTERS_LIST=""
+	SLEEP=2
+	NOT_REAL=false
+}
 
+setDefaults
 
 nextIsProfile=false
 PROFILE=default
@@ -41,23 +45,19 @@ done
 
 case "$PROFILE" in
 	default)
-		{
-			echo "" 
-			echo " ***"
-			echo " *** default profile (or no profile) is DEPRECATED. Set profile explicitly with --profile <profile_name>. You are warned. Continuing."
-			echo " ***"
-			echo ""
-		} >&2
-		SLEEP=10
-
 		FILTERS_LIST="bitrix-to-local"
 		;;	
 	first-time-to-local)
-		FILTERS_LIST="bitrix-to-local"
-		SYNC_LOCAL_SETTINGS=true
-		DELETE_FILES=true
+		. "$WRKDIR/profiles/first-time-to-local.sh"
+		;;	
+	update-without-settings)
+		. "$WRKDIR/profiles/update-without-settings.sh"
 		;;	
 	first-time-to-stage)
+		# мы так не делаем. Когда будем делать часто, тогда вернемся к этой логике.
+		# Вероятно, в отдельном скрипте.
+		echo "DEPRECATED" >&2
+		exit 1
 		UPLOAD=true
 		SYNC_LOCAL_SETTINGS=true
 		FILTERS_LIST="common-dev-test-var-files bitrix-tmp-cache-files"
@@ -96,6 +96,10 @@ while [ $# -gt 0 ]; do
 			HELP=true
 			shift
 			;;
+		--profiles)
+			HELP_PROFILES=true
+			shift
+			;;
 		--dry-run|--dry)
 			DRY=true
 			shift
@@ -113,6 +117,11 @@ while [ $# -gt 0 ]; do
 			shift
 			;;
 		--up|--upload)
+			# мы так не делаем. Когда будем делать часто, тогда вернемся к этой логике.
+			# Вероятно, в отдельном скрипте.
+			echo "DEPRECATED" >&2
+			exit 1
+	
 			UPLOAD=true
 			shift
 			;;
@@ -144,6 +153,68 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
+
+if [ -z "$WWWROOT" ] || [ -z "$SERVER" ] ; then
+	HELP=true
+fi
+
+if [ "$HELP" = "true" ] ; then
+	if [ "$HELP_PROFILES" == 'true' ] ; then
+		{
+		echo "Профили:"
+		echo ""
+		for profileFile in "$WRKDIR"/profiles/*.sh ; do
+			profileName=`basename "$profileFile" .sh`
+			echo "$profileName"
+			echo ""
+
+			setDefaults
+			PROFILE_DESC=
+
+			. "$profileFile"
+
+			if [ -n "$PROFILE_DESC" ] ; then
+				echo "$PROFILE_DESC"
+				echo
+			fi
+
+			echo -n " * Синхронизирует настройки: "
+			[ "$SYNC_LOCAL_SETTINGS" == "true" ] && echo "ДА! (перезапишет пароль к БД и .htaccess!)" || echo "Нет"
+
+			echo -n " * Удаляет отсутствующие в источнике файлы: "
+			[ "$DELETE_FILES" == "true" ] && echo "ДА! (удалит всё, чего нет в проекте!)" || echo "Нет"
+
+			echo -n " * Удаляет исключенные из синхронизации файлы: "
+			[ "$SYNC_LOCAL_SETTINGS" == "true" ] && echo "ДА! (может уничтожить www/upload, например)" || echo "Нет"
+	
+			echo
+		done
+		} >&2
+	else 
+		{
+		echo "Syntax: $SCRIPT_NAME [ --lite | --initial ] <remote_host> <remote_document_root> [local_dir] "
+		echo ""
+		echo "Загружает файлы с remote_host из remote_document_root в local_dir (или в текущую папку)"
+		echo ""
+		echo "    remote_document_root  - корень сайта на битриксе, например /home/bitrix/www" 
+		echo ""
+		echo "    --initial  - загрузить .settings.php, dbconn.php, .htaccess (помимо прочих файлов)" 
+		echo "    --full     - загрузить все картинки, upload и прочее, т. е. сделать полную копию сайта" 
+		echo ""
+		echo "Если в текущей директории есть файл filter.rsync, он подключается через --filter. Пути к файлам"
+		echo "нужно указывать относительно remote_document_root. Например, если remote_document_root это"
+		echo "/home/bitrix/www, и нужно исключить /home/bitrix/www/sitemap.xml, то указывать надо как"
+		echo "- /sitemap.xml"
+		echo ""
+		} >&2
+	fi
+	exit 1
+fi
+
+if [ "$EXIT" = "true" ] ; then
+	exit 1
+fi
+
 # deprecated
 if [ 'true' == "$INITIAL" ] ; then
 	echo "" >&2
@@ -155,36 +226,19 @@ if [ 'true' == "$INITIAL" ] ; then
 
 	SYNC_LOCAL_SETTINGS=true
 	DELETE_FILES=true
+	DELETE_EXCLUDED_FILES=true
 fi
 # ^^
 
-
-if [ -z "$WWWROOT" ] || [ -z "$SERVER" ] ; then
-	HELP=true
-fi
-
-if [ "$HELP" = "true" ] ; then
-	{
-	echo "Syntax: $SCRIPT_NAME [ --lite | --initial ] <remote_host> <remote_document_root> [local_dir] "
-	echo ""
-	echo "Загружает файлы с remote_host из remote_document_root в local_dir (или в текущую папку)"
-	echo ""
-        echo "    remote_document_root  - корень сайта на битриксе, например /home/bitrix/www" 
-	echo ""
-	echo "    --initial  - загрузить .settings.php, dbconn.php, .htaccess (помимо прочих файлов)" 
-	echo "    --full     - загрузить все картинки, upload и прочее, т. е. сделать полную копию сайта" 
-	echo ""
-	echo "Если в текущей директории есть файл filter.rsync, он подключается через --filter. Пути к файлам"
-	echo "нужно указывать относительно remote_document_root. Например, если remote_document_root это"
-	echo "/home/bitrix/www, и нужно исключить /home/bitrix/www/sitemap.xml, то указывать надо как"
-	echo "- /sitemap.xml"
-	echo ""
-	} >&2
-	exit 1
-fi
-
-if [ "$EXIT" = "true" ] ; then
-	exit 1
+if [ "default"  == "$PROFILE" ] ; then
+                {
+                        echo "" 
+                        echo " ***"
+                        echo " *** default profile (or no profile) is DEPRECATED. Set profile explicitly with --profile <profile_name>. You are warned. Continuing."
+                        echo " ***"
+                        echo ""
+                } >&2
+                SLEEP=10
 fi
 
 if [ "$IBLOCKS" = 'true' ] ; then
@@ -213,7 +267,10 @@ if [ "$PROTECT_BITRIX_CORE" = "true" ] ; then
 fi
 
 if [ "true" == "$DELETE_FILES" ] ; then
-	DELETE_ARG="--delete-excluded --delete"
+	DELETE_ARG="--delete"
+	if [ "true" == "$DELETE_EXCLUDED_FILES" ] ; then
+		DELETE_ARG="$DELETE_ARG --delete-excluded"
+	fi
 else
 	DELETE_ARG=
 fi
@@ -238,6 +295,11 @@ fi
 
 
 if [ "$UPLOAD" == 'true' ] ; then
+	# мы так не делаем. Когда будем делать часто, тогда вернемся к этой логике.
+	# Вероятно, в отдельном скрипте.
+	echo "DEPRECATED" >&2
+	exit 1
+
 	FROM_ARG="$TARGET_DIR"
 	TO_ARG="$SERVER:$WWWROOT"
 else 
@@ -255,6 +317,11 @@ else
 fi
 
 if [ "$UPLOAD" == "true" ] ; then
+	# мы так не делаем. Когда будем делать часто, тогда вернемся к этой логике.
+	# Вероятно, в отдельном скрипте.
+	echo "DEPRECATED" >&2
+	exit 1
+
 	if [ "$DELETE_FILES" == "true" ] ; then
 		if [ "true" != "$NOT_REAL" ] && [ "true" != "$FORCE_DELETE_FILES_ON_REMOTE" ] ; then
 			{

@@ -129,6 +129,11 @@ while [ $# -gt 0 ]; do
 			# --profile was parsed earlier, skip here
 			shift 2
 			;;
+		--target)
+			shift
+			TARGET_DIR="$1"
+			shift 
+			;;
 		--*)
 			echo "Unknown argument: $1" >&2
 			shift

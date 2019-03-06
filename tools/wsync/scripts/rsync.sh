@@ -64,8 +64,13 @@ case "$PROFILE" in
 		DELETE_FILES=true
 		;;	
 	*)
-		echo "Unknown profile $PROFILE" >&2
-		exit 1
+		file="$WRKDIR/profiles/$PROFILE.sh"
+		if [ -f "$file" ] ; then
+			. "$file"
+		else 
+			echo "Unknown profile $PROFILE" >&2
+			exit 1
+		fi
 		;;
 esac
 

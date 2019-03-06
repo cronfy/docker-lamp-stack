@@ -1,0 +1,20 @@
+- .git
+
+# logs
+- *.log
+
+# dev temp files
+- *.bak
+
+# heavy but unneeded for local dev
+- *.zip
+- *.gz
+- *.rar
+- *.tar
+- *.tar.gz
+
+# common hosting var/tmp files
+- /.well-known
+
+
+

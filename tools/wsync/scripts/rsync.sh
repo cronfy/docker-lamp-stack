@@ -358,6 +358,12 @@ echo " --- PROFILE: $PROFILE"
 echo " --- COPY: $FROM_ARG => $TO_ARG"
 echo " --- DELETE_FILES: $DELETE_FILES"
 echo " --- SYNC LOCAL SETTINGS: $SYNC_LOCAL_SETTINGS"
+echo -n " --- Local filter: "
+if [ -n "$THIS_PROJECT_LOCAL_FILTER_ARG" ] ; then
+	echo "$THIS_PROJECT_LOCAL_FILTER_ARG"
+else
+	echo none
+fi
 
 if [ "true" == "$DRY" ] ; then
 	echo " *** MODE: DRY"

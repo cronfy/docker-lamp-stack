@@ -97,13 +97,13 @@ while [ $# -gt 0 ]; do
 			IBLOCKS=true
 			shift
 			;;
-		--help)
+		--help|help)
 			HELP=true
 			shift
-			;;
-		--profiles)
-			HELP_PROFILES=true
-			shift
+			if [ "profiles" = "$1" ] ; then
+				HELP_PROFILES=true
+				shift
+			fi	
 			;;
 		--dry-run|--dry)
 			DRY=true

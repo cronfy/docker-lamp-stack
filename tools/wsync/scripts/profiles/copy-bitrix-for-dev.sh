@@ -4,6 +4,6 @@ SYNC_LOCAL_SETTINGS=true
 DELETE_FILES=true
 DELETE_EXCLUDED_FILES=true
 
-PROFILE_DESC="Копирует сайт на bitrix для локальной разработки."
+PROFILE_DESC="Копирует сайт на bitrix для локальной разработки (не копирует большие файлы, в том числе upload/)."
 
 

@@ -295,7 +295,7 @@ TO_ARG="$TARGET_DIR"
 
 FOLDER_FILTER_ARG=
 if [ -n "$FOLDER" ] ; then
-	FOLDER_FILTER_ARG=" --filter='+ /$FOLDER' --filter='- /*' "
+	FOLDER_FILTER_ARG=" --filter='+ /$FOLDER/' --filter='- /*' "
 fi
 
 if [ -n "$FILTERS_LIST" ] ; then
@@ -316,6 +316,10 @@ if [ -n "$THIS_PROJECT_LOCAL_FILTER_ARG" ] ; then
 	echo "$THIS_PROJECT_LOCAL_FILTER_ARG"
 else
 	echo none
+fi
+
+if [ -n "$FOLDER" ] ; then
+	echo " *** FOLDER: $FOLDER"
 fi
 
 if [ "true" == "$DRY" ] ; then

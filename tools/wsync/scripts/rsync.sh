@@ -23,6 +23,7 @@ setDefaults() {
 	FILTERS_LIST=""
 	SLEEP=2
 	NOT_REAL=false
+	FOLDER=
 }
 
 setDefaults
@@ -137,6 +138,11 @@ while [ $# -gt 0 ]; do
 		--target)
 			shift
 			TARGET_DIR="$1"
+			shift 
+			;;
+		--folder)
+			shift
+			FOLDER="$1"
 			shift 
 			;;
 		--*)
@@ -317,6 +323,11 @@ else
         TO_ARG="$TARGET_DIR"
 fi
 
+FOLDER_FILTER_ARG=
+if [ -n "$FOLDER" ] ; then
+	FOLDER_FILTER_ARG=" --filter='+ /$FOLDER' --filter='- /*' "
+fi
+
 if [ -n "$FILTERS_LIST" ] ; then
 	FILTERS_LIST_ARG=
 	for filter in $FILTERS_LIST ; do
@@ -391,6 +402,9 @@ eval $ECHO_CMD rsync -avz \
 	$FILTERS_LIST_ARG \
 	\
 	$THIS_PROJECT_LOCAL_FILTER_ARG \
+	\
+	$FOLDER_FILTER_ARG \
+	\
 	--out-format=\"%n %l\" \
 	$FROM_ARG $TO_ARG
 

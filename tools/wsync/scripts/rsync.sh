@@ -15,7 +15,6 @@ setDefaults() {
 	ECHO=false
 	PROTECT_BITRIX_CORE=false
 	FULL=false
-	UPLOAD=false
 	FORCE_DELETE_FILES_ON_REMOTE=false
 	SYNC_LOCAL_SETTINGS=false
 	DELETE_FILES=false
@@ -53,16 +52,6 @@ case "$PROFILE" in
 		;;	
 	update-without-settings)
 		. "$WRKDIR/profiles/update-without-settings.sh"
-		;;	
-	first-time-to-stage)
-		# мы так не делаем. Когда будем делать часто, тогда вернемся к этой логике.
-		# Вероятно, в отдельном скрипте.
-		echo "DEPRECATED" >&2
-		exit 1
-		UPLOAD=true
-		SYNC_LOCAL_SETTINGS=true
-		FILTERS_LIST="common-dev-test-var-files bitrix-tmp-cache-files"
-		DELETE_FILES=true
 		;;	
 	*)
 		file="$WRKDIR/profiles/$PROFILE.sh"
@@ -120,15 +109,6 @@ while [ $# -gt 0 ]; do
 			;;
 		--force-delete-files-on-remote)
 			FORCE_DELETE_FILES_ON_REMOTE=true
-			shift
-			;;
-		--up|--upload)
-			# мы так не делаем. Когда будем делать часто, тогда вернемся к этой логике.
-			# Вероятно, в отдельном скрипте.
-			echo "DEPRECATED" >&2
-			exit 1
-	
-			UPLOAD=true
 			shift
 			;;
 		--profile)
@@ -310,18 +290,8 @@ fi
 
 
 
-if [ "$UPLOAD" == 'true' ] ; then
-	# мы так не делаем. Когда будем делать часто, тогда вернемся к этой логике.
-	# Вероятно, в отдельном скрипте.
-	echo "DEPRECATED" >&2
-	exit 1
-
-	FROM_ARG="$TARGET_DIR"
-	TO_ARG="$SERVER:$WWWROOT"
-else 
-        FROM_ARG="$SERVER:$WWWROOT"
-        TO_ARG="$TARGET_DIR"
-fi
+FROM_ARG="$SERVER:$WWWROOT"
+TO_ARG="$TARGET_DIR"
 
 FOLDER_FILTER_ARG=
 if [ -n "$FOLDER" ] ; then
@@ -335,34 +305,6 @@ if [ -n "$FILTERS_LIST" ] ; then
 	done
 else
 	FILTERS_LIST_ARG=""
-fi
-
-if [ "$UPLOAD" == "true" ] ; then
-	# мы так не делаем. Когда будем делать часто, тогда вернемся к этой логике.
-	# Вероятно, в отдельном скрипте.
-	echo "DEPRECATED" >&2
-	exit 1
-
-	if [ "$DELETE_FILES" == "true" ] ; then
-		if [ "true" != "$NOT_REAL" ] && [ "true" != "$FORCE_DELETE_FILES_ON_REMOTE" ] ; then
-			{
-			echo " *** Вы пытаетесь УДАЛИТЬ файлы на СЕРВЕРЕ."
-			echo " *** Будут удалены файлы, отсутствующие в локальной копии или исключенные из" 
-			echo " *** загрузки (например, это может быть содержимое upload)."
-			echo 
-			echo "Если это действительно то, что нужно сделать, нужно указать ключ"
-			echo 
-			echo "     --force-delete-files-on-remote"
-			echo 
-			echo "Можно также указать "
-			echo
-			echo "     --dry"
-			echo "чтобы посмотреть, что произойдет при синхронизации, но не проводить"
-			ehco "синхронизацию по-настоящему."
-			} >&2
-			exit 1
-		fi
-	fi
 fi
 
 echo " --- PROFILE: $PROFILE"

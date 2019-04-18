@@ -46,7 +46,7 @@ mysqlCredentials="`ssh $SERVER cat $WWWROOT/bitrix/.settings.php | awk '
 	$1 == quote "database" quote { dbname = $3 }
 	$1 == quote "password" quote { password = $3 }
 
-	END { if (password && username && dbname && host) print "-u " username " -p" password " -h " host, dbname }
+	END { if (password && username && dbname && host) print  username, password, host, dbname }
 '`"
 
 if [ -z "$mysqlCredentials" ] ; then
@@ -54,7 +54,18 @@ if [ -z "$mysqlCredentials" ] ; then
 	exit 1
 fi
 
-echo mysqldump $mysqlCredentials >&2
-#ssh $SERVER mysql -e "\"show databases\"" $mysqlCredentials 
-ssh $SERVER mysqldump $mysqlCredentials \| gzip
+# данные приходят с кавычками вокруг, т. е. в виде: 'someuser' 'somepwd' 'somehost' 'somedb'
+# кавычки как правило одинарные, потому что так Битрикс генерит .settings.php, ну и awk'шный скрипт
+# с другими работать не сможет.
+# Так что КАВЫЧКИ ТОЧНО ЕСТЬ, и они одинарные.
+# eval - чтобы они раскрылись в переменные  без кавычек, т. е. в $1 будет password, а не 'password'
+eval set -- $mysqlCredentials
+
+username="$1"
+password="$2"
+host="$3"
+dbname="$4"
+
+#ssh $SERVER mysql -e "\"show databases\""  -u "$username" -p"$password" -h "$host" 
+ssh $SERVER \{ mysqldump -u "$username" -p"$password" -h "$host" "$dbname" --ignore-table="$dbname.b_event_log" \; mysqldump -u "$username" -p"$password" -h "$host" --no-data "$dbname" b_event_log \; \} \| gzip
 

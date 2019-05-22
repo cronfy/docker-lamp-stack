@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+function executeRemoteCommand() {
+	local server="$1" command="$2"
+	
+	COMMAND_64=`echo "$command" | base64`
+
+	ssh $server "echo '$COMMAND_64' | base64 -d | bash"
+}
+
 SCRIPT_NAME="${SCRIPT_NAME:-`basename $0`}"
 
 if [ -f '.wsync' ] ; then
@@ -66,6 +74,17 @@ password="$2"
 host="$3"
 dbname="$4"
 
-#ssh $SERVER mysql -e "\"show databases\""  -u "$username" -p"$password" -h "$host" 
-ssh $SERVER \{ mysqldump -u "$username" -p"$password" -h "$host" "$dbname" --ignore-table="$dbname.b_event_log" \; mysqldump -u "$username" -p"$password" -h "$host" --no-data "$dbname" b_event_log \; \} \| gzip
+# known big tables
+KNOWN_BIG_TABLES="b_kdaimportexcel_profile_exec_stat b_event_log"
+
+KNOWN_BIG_TABLES_IGNORE=""
+for i in $KNOWN_BIG_TABLES ; do
+	KNOWN_BIG_TABLES_IGNORE="$KNOWN_BIG_TABLES_IGNORE --ignore-table=$dbname.$i"
+done
+
+
+COMMAND="{ mysql -u '$username' -p'$password' -h '$host' -e 'show tables' '$dbname'; } | tee"
+COMMAND="{ mysqldump -u '$username' -p'$password' -h '$host' '$dbname' $KNOWN_BIG_TABLES_IGNORE ; mysqldump -u '$username' -p'$password' -h '$host' --no-data '$dbname' $KNOWN_BIG_TABLES ; } | gzip"
+
+executeRemoteCommand "$SERVER" "$COMMAND"
 

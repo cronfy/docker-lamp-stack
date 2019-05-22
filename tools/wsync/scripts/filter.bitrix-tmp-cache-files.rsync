@@ -1,6 +1,8 @@
 #
 # ROOT is www/ (document root)
 #
+# Файлы, которые однозначно можно удалить без потерь, поэтому и переносить
+# их при копировании сайта не надо
 
 # bitrix tmp and cache
 - /bitrix/managed_cache
@@ -8,4 +10,7 @@
 - /bitrix/cache
 - /bitrix/html_pages
 - /bitrix/tmp
+
+- /upload/resize_cache
+- /upload/tmp
 

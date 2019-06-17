@@ -74,17 +74,29 @@ password="$2"
 host="$3"
 dbname="$4"
 
-# known big tables
+# Список известных больших таблиц, которые не нужно копировать на локалку
 KNOWN_BIG_TABLES="b_kdaimportexcel_profile_exec_stat b_event_log"
 
-KNOWN_BIG_TABLES_IGNORE=""
-for i in $KNOWN_BIG_TABLES ; do
-	KNOWN_BIG_TABLES_IGNORE="$KNOWN_BIG_TABLES_IGNORE --ignore-table=$dbname.$i"
+# Оставим из них только те, что реально есть на сервере, чтобы не было ошибок mysqldump вида 'unknown table'
+COMMAND="{ mysql -u '$username' -p'$password' -h '$host' -e 'show tables' -N '$dbname'; } | tee"
+SERVER_TABLES="`executeRemoteCommand "$SERVER" "$COMMAND"`"
+EXISTING_BIG_TABLES_LIST=""
+EXISTING_BIG_TABLES_IGNORE=""
+for table in $KNOWN_BIG_TABLES ; do
+	if ! echo "$SERVER_TABLES" | grep -q "^$table$" ; then
+		continue
+	fi
+
+	EXISTING_BIG_TABLES_LIST="$EXISTING_BIG_TABLES_LIST $table"
+	EXISTING_BIG_TABLES_IGNORE="$KNOWN_BIG_TABLES_IGNORE --ignore-table=$dbname.$table"
 done
 
+echo "Skipping big tables: $EXISTING_BIG_TABLES_LIST" >&2
 
-COMMAND="{ mysql -u '$username' -p'$password' -h '$host' -e 'show tables' '$dbname'; } | tee"
-COMMAND="{ mysqldump -u '$username' -p'$password' -h '$host' '$dbname' $KNOWN_BIG_TABLES_IGNORE ; mysqldump -u '$username' -p'$password' -h '$host' --no-data '$dbname' $KNOWN_BIG_TABLES ; } | gzip"
+
+# Дамп
+
+COMMAND="{ mysqldump -u '$username' -p'$password' -h '$host' '$dbname' $EXISTING_BIG_TABLES_IGNORE ; mysqldump -u '$username' -p'$password' -h '$host' --no-data '$dbname' $EXISTING_BIG_TABLES_LIST ; } | gzip"
 
 executeRemoteCommand "$SERVER" "$COMMAND"
 

@@ -6,7 +6,6 @@ WRKDIR="`dirname "$0"`"
 WRKDIR="`realpath "$WRKDIR"`"
 
 setDefaults() {
-	INITIAL=false
 	LITE=false
 	IBLOCKS=false
 	HELP=false
@@ -14,7 +13,6 @@ setDefaults() {
 	EXIT=false
 	ECHO=false
 	PROTECT_BITRIX_CORE=false
-	FULL=false
 	FORCE_DELETE_FILES_ON_REMOTE=false
 	SYNC_LOCAL_SETTINGS=false
 	DELETE_FILES=false
@@ -22,11 +20,13 @@ setDefaults() {
 	FILTERS_LIST=""
 	SLEEP=2
 	NOT_REAL=false
+        OUTPUT_FORMAT="progress"
 	FOLDER=
 }
 
 setDefaults
 
+# Сначала ищем аргумент --profile, так как он задает настройки по умолчанию
 nextIsProfile=false
 PROFILE=default
 for arg in "$@" ; do
@@ -63,6 +63,7 @@ case "$PROFILE" in
 		fi
 		;;
 esac
+# ^^^ конец разбора --profile
 
 if [ -f '.wsync' ] ; then
 	. .wsync
@@ -75,14 +76,6 @@ fi
 POS=0
 while [ $# -gt 0 ]; do
 	case "$1" in
-		--full)
-			FULL=true
-			shift
-			;;
-		--initial)
-			INITIAL=true
-			shift
-			;;
 		--iblocks)
 			IBLOCKS=true
 			shift
@@ -125,6 +118,10 @@ while [ $# -gt 0 ]; do
 			FOLDER="$1"
 			shift 
 			;;
+		--verbose|-v)
+			OUTPUT_FORMAT="verbose"
+			shift 
+			;;
 		--*)
 			echo "Unknown argument: $1" >&2
 			shift
@@ -143,10 +140,21 @@ while [ $# -gt 0 ]; do
 				3)
 					TARGET_DIR="$1"
 					;;
+                                *)       
+					echo "Unknown positional argument: $1" >&2
+					shift
+					HELP=true
+					EXIT=true
+					;;
 			esac
+
 			shift
 			;;
 	esac
+
+	if [ "$HELP" = "true" ] || [ "$EXIT" = "true" ] ; then
+		break
+	fi
 done
 
 
@@ -188,19 +196,42 @@ if [ "$HELP" = "true" ] ; then
 		} >&2
 	else 
 		{
-		echo "Syntax: $SCRIPT_NAME [ --lite | --initial ] <remote_host> <remote_document_root> [local_dir] "
+		echo "Syntax: $SCRIPT_NAME <remote_host> <remote_document_root> [local_dir] [options]"
 		echo ""
 		echo "Загружает файлы с remote_host из remote_document_root в local_dir (или в текущую папку)"
 		echo ""
-		echo "    remote_document_root  - корень сайта на битриксе, например /home/bitrix/www" 
+		echo "    remote_host           - удаленный сервер, с которого загружаем файлы" 
+		echo "    remote_document_root  - корень сайта на битриксе, например /home/bitrix/www или /home/hstuser827/domains/site1.ru/public_html" 
 		echo ""
-		echo "    --initial  - загрузить .settings.php, dbconn.php, .htaccess (помимо прочих файлов)" 
-		echo "    --full     - загрузить все картинки, upload и прочее, т. е. сделать полную копию сайта" 
+		echo "    --help                - эта справка" 
+		echo "    --help profiles       - помощь по профилям" 
 		echo ""
-		echo "Если в текущей директории есть файл filter.rsync, он подключается через --filter. Пути к файлам"
-		echo "нужно указывать относительно remote_document_root. Например, если remote_document_root это"
-		echo "/home/bitrix/www, и нужно исключить /home/bitrix/www/sitemap.xml, то указывать надо как"
-		echo "- /sitemap.xml"
+		echo "    --v, --verbose        - вывод имен передаваемых файлов" 
+		echo "    --dry, --dry-run      - не делать реальных изменений, только показать, что произойдет" 
+		echo "    --echo                - ничего не делать, только вывести итоговую команду rsync" 
+		echo ""
+		echo "    --profile ИМЯ         - использовать профиль ИМЯ (доступные имена см. в  --help profiles)" 
+		echo "    --folder ИМЯ          - обновить только папку ИМЯ" 
+		echo ""
+		echo ""
+		echo "Если в текущей директории есть файл .wsync, то из него будут взяты настройки подключения:"
+		echo ""
+ 		echo "     переменная STAGE_HOST              - remote_host"
+		echo "     переменная STAGE_DOCUMENT_ROOT     - remote_document_root"
+		echo ""
+		echo ""
+		echo "Если в текущей директории есть файл filter.rsync, к аргументам rsync добавляется --filter с этим файлом."
+		echo "Пути к файлам в filter.rsync нужно указывать относительно remote_document_root. Например,"
+		echo "если remote_document_root это /home/bitrix/www, и нужно исключить /home/bitrix/www/sitemap.xml,"
+		echo "то указывать надо как '- /sitemap.xml'"
+		echo ""
+		echo ""
+		echo "Примеры:"
+		echo ""
+		echo -e "Первая загрузка сайта (только посмотреть, что скачается):\n    $SCRIPT_NAME host /path/to/public_html --profile copy-bitrix-for-dev --dry" 
+		echo -e "Первая загрузка сайта (реально скачать):\n    $SCRIPT_NAME host /path/to/public_html --profile copy-bitrix-for-dev" 
+		echo -e "Обновление папки bitrix:\n    $SCRIPT_NAME host /path/to/public_html --profile"
+		echo -e "Скачать upload:\n    $SCRIPT_NAME host /path/to/public_html --profile copy-bitrix --folder upload" 
 		echo ""
 		} >&2
 	fi
@@ -210,21 +241,6 @@ fi
 if [ "$EXIT" = "true" ] ; then
 	exit 1
 fi
-
-# deprecated
-if [ 'true' == "$INITIAL" ] ; then
-	echo "" >&2
-	echo " ***" >&2
-	echo " *** --initial is DEPRECATED (use --profile first-time-to-local). You are warned. Continuing." >&2
-	echo " ***" >&2
-	echo "" >&2
-	SLEEP=10
-
-	SYNC_LOCAL_SETTINGS=true
-	DELETE_FILES=true
-	DELETE_EXCLUDED_FILES=true
-fi
-# ^^
 
 if [ "default"  == "$PROFILE" ] ; then
                 {
@@ -334,13 +350,23 @@ else
 	sleep $SLEEP || { echo "Sleep error" ; exit 1; }
 fi
 
+if [ "$NOT_REAL" = "true" ] ; then
+	OUTPUT_FORMAT="verbose"
+fi
+
+if [ "$OUTPUT_FORMAT" = "verbose" ] ; then
+	OUTPUT_FORMAT_ARG="-v --out-format=\"%n %l\""
+else
+	OUTPUT_FORMAT_ARG="--info='progress2'"
+fi
+
 # rsync использует алгоритм delta-transfer для передачи файлов. Это означает, что если файл изменился
 # частично, или вообще не менялся, то rsync синхронизирует его, не передавая его содержимое целиком,
 # а только изменения. Поэтому имеет смысл перед началом rsync скопировать на сайт заготовленное ядро
 # bitrix, чтобы не нужно было передавать сотни мегабайт исходников Битрикса по сети.
 
 # eval: https://stackoverflow.com/a/21163341/1775065
-eval $ECHO_CMD rsync -avz \
+eval $ECHO_CMD rsync -az \
 	$DRY_ARG \
 	\
 	$DELETE_ARG \
@@ -351,6 +377,6 @@ eval $ECHO_CMD rsync -avz \
 	\
 	$FOLDER_FILTER_ARG \
 	\
-	--out-format=\"%n %l\" \
+	$OUTPUT_FORMAT_ARG \
 	$FROM_ARG $TO_ARG
 

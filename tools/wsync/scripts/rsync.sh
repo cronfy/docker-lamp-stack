@@ -158,8 +158,14 @@ while [ $# -gt 0 ]; do
 done
 
 
-if [ -z "$WWWROOT" ] || [ -z "$SERVER" ] ; then
-	HELP=true
+if ([ -z "$WWWROOT" ] || [ -z "$SERVER" ]) && [ "$HELP" != "true" ] ; then
+	echo "Не указан remote_host и/или remote_document_root, а также отсутствует файл .wsync. Непонятно, откуда скачивать файлы." >&2
+	echo "" >&2
+	echo "Для справки запустите:" >&2
+	echo "    $SCRIPT_NAME --help" >&2
+	echo "" >&2
+
+	exit
 fi
 
 if [ "$HELP" = "true" ] ; then

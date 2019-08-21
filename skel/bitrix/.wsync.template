@@ -1,5 +1,0 @@
-# Куда идти по ssh, например, mysite.ru
-STAGE_HOST=
-# Где лежат файлы сайта, например, /home/bitrix/www или /home/user22782/domains/mysite.ru/public_html
-STAGE_DOCUMENT_ROOT=
-

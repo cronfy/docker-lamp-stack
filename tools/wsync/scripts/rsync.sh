@@ -271,7 +271,7 @@ if [ -n "$TARGET_DIR" ] ; then
 	TARGET_DIR="$TARGET_DIR/"
 else 
 	# add trailing slash
-	TARGET_DIR=./`basename $WWWROOT`/
+	TARGET_DIR=./www/
 fi
 
 if [ "true" == "$SYNC_LOCAL_SETTINGS"  ] ; then

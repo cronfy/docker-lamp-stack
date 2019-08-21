@@ -1,9 +1,5 @@
+# Куда идти по ssh, например, mysite.ru
 STAGE_HOST=
-
-# NO project dir:
-STAGE_PROJECT_ROOT=/home/bitrix
-# WITH project dir:
-STAGE_PROJECT_ROOT=/home/bitrix/projects/.../project
-
-STAGE_DOCUMENT_ROOT=${STAGE_PROJECT_ROOT}/www
+# Где лежат файлы сайта, например, /home/bitrix/www или /home/user22782/domains/mysite.ru/public_html
+STAGE_DOCUMENT_ROOT=
 

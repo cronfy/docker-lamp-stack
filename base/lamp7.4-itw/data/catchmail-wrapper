@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+cd `dirname $0`
+
+#
+# Fixes bug with sendmail compatibility: in catchmail -f must have a space after it, in sendmail it is not required
+#
+
+
+LOG=/var/www/log/catchmail.log
+
+echo "Args: " "$@" >> $LOG
+
+pos=0
+cur=0
+for arg in "$@" ; do
+        cur=$(($cur+1))
+        if echo "$arg" | grep -q '^-f' ; then
+                pos="$cur"
+                replacement=`echo "$arg" | sed 's/-f/-f /'`
+                break
+        else
+                :
+        fi
+done
+
+if [ "0" != "$pos" ] ; then
+        to=$(($pos - 1))
+        from=$(($pos + 1))
+        set -- "${@:1:$to}" $replacement "${@:$from}"
+        echo "Args replaced: " "$@" >> $LOG
+fi
+
+tee -a $LOG | ./catchmail "$@" >> $LOG 2>&1
+echo "Status: $?" >> $LOG
+echo >> $LOG
+echo >> $LOG
+echo >> $LOG
+
